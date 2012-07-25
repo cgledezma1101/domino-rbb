@@ -18,7 +18,7 @@ int runClient()
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
    if (sockfd < 0)
-       printf("ERROR opening socket");
+       printf("ERROR opening socket\n");
 
    server = gethostbyname("192.168.136.132");
    if (server == NULL) {
@@ -36,12 +36,12 @@ int runClient()
 
    n = write(sockfd,buffer,strlen(buffer));
    if (n < 0)
-        printf("ERROR writing to socket");
+        printf("ERROR writing to socket\n");
 
    bzero(buffer,256);
    n = read(sockfd,buffer,255);
    if (n < 0)
-        printf("ERROR reading from socket");
+        printf("ERROR reading from socket\n");
    printf("%s\n",buffer);
    close(sockfd);
    return 0;

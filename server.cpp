@@ -8,7 +8,7 @@
 
 int runServer()
 {
-   int sockfd, newsockfd, portno = 810602;
+   int sockfd, newsockfd, portno = 10602;
    socklen_t clilen;
    char buffer[256];
    struct sockaddr_in serv_addr, cli_addr;
@@ -16,7 +16,7 @@ int runServer()
    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
    if (sockfd < 0)
-      printf("ERROR opening socket");
+      printf("ERROR opening socket\n");
 
    bzero((char *) &serv_addr, sizeof(serv_addr));
 
@@ -26,26 +26,29 @@ int runServer()
 
    if (bind(sockfd, (struct sockaddr *) &serv_addr,
             sizeof(serv_addr)) < 0)
-            printf("ERROR on binding");
+            printf("ERROR on binding\n");
 
+   printf("Getting ready to listen to socket\n");
    listen(sockfd,5);
+   printf("Already listening to socket\n");
    clilen = sizeof(cli_addr);
+   printf("Waiting to accept a connection\n");
    newsockfd = accept(sockfd,
                (struct sockaddr *) &cli_addr,
                &clilen);
-
+   printf("A connection was accepted\n");
    if (newsockfd < 0)
-        printf("ERROR on accept");
+        printf("ERROR on accept\n");
 
    bzero(buffer,256);
 
    n = read(newsockfd,buffer,255);
-   if (n < 0) printf("ERROR reading from socket");
+   if (n < 0) printf("ERROR reading from socket\n");
 
    printf("Here is the message: %s\n",buffer);
 
    n = write(newsockfd,"I got your message",18);
-   if (n < 0) printf("ERROR writing to socket");
+   if (n < 0) printf("ERROR writing to socket\n");
    close(newsockfd);
    close(sockfd);
    return 0;
