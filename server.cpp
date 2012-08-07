@@ -27,7 +27,7 @@ int runServer()
       exit(1);
    }
 
-   if(!sendBroadcast())
+   if(!sendBroadcast(sockfd, playerSocket))
    {
       fprintf(stderr, "Error sending the broadcast message\n");
       exit(1);
@@ -81,10 +81,13 @@ int initializeConnection(int *sockfd, int portno)
    return 1;
 }
 
-int sendBroadcast()
+int sendBroadcast(int sockfd, int *sockets)
 {
    char serversIp[INET_ADDRSTRLEN], netmask[INET_ADDRSTRLEN];
+   char *message, *ipString, *ipElem;
    struct sockaddr_in *localIp, *subnetMask, *broadcastIp;
+   int broadSocket;
+   int i, j, k;
 
    /*
     * Find out server's IP address and the subnet mask, in order to build the
@@ -136,7 +139,78 @@ int sendBroadcast()
    broadcastIp->sin_addr.s_addr = (localIp->sin_addr.s_addr &
                                      subnetMask->sin_addr.s_addr)
                                   | (~subnetMask->sin_addr.s_addr);
+   broadcastIp->sin_family = AF_INET;
+   broadcastIp->sin_port = htons(10602);
 
    fprintf(stderr, "Broadcast IP: %s\n", inet_ntoa(broadcastIp->sin_addr));
+
+   //Opening socket to initialize broadcast of servers IP
+   broadSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+   if(broadSocket < 0)
+   {
+      fprintf(stderr, "Error opening broadcast socket\n");
+      exit(1);
+   }
+
+   //Now that the socket has been opened, start to build the message to broadcast
+   message = (char *)malloc(11 * sizeof(char));
+   //Message type, b for broadcast
+   message[0] = 'b';
+   //Table number, always sending 0. Assuming there won't be other tables in
+   //the same LAN. This has to be scalated
+   message[1] = '0';
+
+   //Now, to build the server's ip
+   ipString = inet_ntoa(localIp->sin_addr);
+   ipElem = strtok(ipString, ".");
+   for(i = 0; i < 4; ++ i)
+   {
+      fprintf(stderr, "Building IP element: %s\n", ipElem);
+      //Count how many elements there are in this ip
+      j = 0;
+      char num = ipElem[0];
+      while(num != NULL)
+      {
+         num = ipElem[++ j];
+      }
+
+      fprintf(stderr, "Number of elements counted: %d\n", j);
+      //Now that 'j' has the number of elements, write them into the message with
+      //the corresponding leading zeroes
+      for(k = 3; k > 0; -- k)
+      {
+         if(j > 0)
+         {
+            //If there are still characters from the ip to write, then write them
+            message[1 + i * 3 + k] = ipElem[-- j];
+         }else
+         {
+            //If not, just write a '0'
+            message[1 + i * 3 + k] = '0';
+         }
+      }
+      ipElem = strtok(NULL, ".");
+   }
+
+   fprintf(stderr, "The message to be sent is: %s\n", message);
+
+   //Connect the broadcast buffer
+   int n;
+   /*if((n = connect(broadSocket, (struct sockaddr *)broadcastIp, sizeof(*broadcastIp))) < 0)
+   {
+      fprintf(stderr, "Error connecting to the broadcast buffer. Error: %d\n", n);
+      exit(1);
+   }*/
+
+   //Send the broadcast
+   sendto(broadSocket, message, 11 * sizeof(char), 0, (struct sockaddr *)broadcastIp, sizeof(*broadcastIp));
+
+   fprintf(stderr, "Message has been broadcasted\n");
+   //Setting free allocated memory and returning
+   /*free(message);
+   free(localIp);
+   free(subnetMask);
+   free(broadcastIp);*/
    return 1;
 }

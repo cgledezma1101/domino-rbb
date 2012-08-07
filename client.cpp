@@ -10,40 +10,27 @@
 int runClient()
 {
    int sockfd, portno = 10602, n;
-   struct sockaddr_in serv_addr;
+   struct sockaddr_in *serv_addr, *local;
    struct hostent *server;
+   char rev[15];
 
-   char buffer[256] = "Hi, sending data from client";
+   local = (sockaddr_in *)malloc(sizeof(sockaddr_in));
+   serv_addr = (sockaddr_in *)malloc(sizeof(sockaddr_in));
 
-   sockfd = socket(AF_INET, SOCK_STREAM, 0);
+   n = sizeof(*serv_addr);
+   local->sin_family = AF_INET;
+   local->sin_port = htons(10602);
+   local->sin_addr.s_addr = INADDR_ANY;
 
-   if (sockfd < 0)
-       printf("ERROR opening socket\n");
+   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
-   server = gethostbyname("192.168.136.132");
-   if (server == NULL) {
-       fprintf(stderr,"ERROR, no such host\n");
-       exit(0);
-   }
-   bzero((char *) &serv_addr, sizeof(serv_addr));
-   serv_addr.sin_family = AF_INET;
-   bcopy((char *)server->h_addr,
-        (char *)&serv_addr.sin_addr.s_addr,
-        server->h_length);
-   serv_addr.sin_port = htons(portno);
-   if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
-       printf("ERROR connecting");
+   bind(sockfd, (sockaddr *)local, sizeof(*local));
 
-   n = write(sockfd,buffer,strlen(buffer));
-   if (n < 0)
-        printf("ERROR writing to socket\n");
+   fprintf(stderr, "Socket bound, waiting to receive broadcast");
+   recvfrom(sockfd, rev, 14 * sizeof(char), 0, (sockaddr *)serv_addr, (socklen_t *)&n);
 
-   bzero(buffer,256);
-   n = read(sockfd,buffer,255);
-   if (n < 0)
-        printf("ERROR reading from socket\n");
-   printf("%s\n",buffer);
-   close(sockfd);
+   fprintf(stderr, "Message received: %s\n", rev);
+   fprintf(stderr, "From: %s\n", inet_ntoa(serv_addr->sin_addr));
    return 0;
 }
 
