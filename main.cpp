@@ -5,7 +5,7 @@ using namespace std;
 
 int main()
 {
-   int runEl = 0;
+   int runEl = 1;
    if(runEl == 0)
    {
       fprintf(stderr, "Running server\n");

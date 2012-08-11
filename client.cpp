@@ -12,25 +12,37 @@ int runClient()
    int sockfd, portno = 10602, n;
    struct sockaddr_in *serv_addr, *local;
    struct hostent *server;
-   char rev[15];
+   char rev[28];
 
-   local = (sockaddr_in *)malloc(sizeof(sockaddr_in));
+   if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+   {
+      fprintf(stderr, "Error creating socket. Aborting client\n");
+      exit(0);
+   }
+   fprintf(stderr, "Socket created successfully\n");
+   server = gethostbyname("192.168.136.128");
+   fprintf(stderr, "Hostname obtained\n");
+
    serv_addr = (sockaddr_in *)malloc(sizeof(sockaddr_in));
+   serv_addr->sin_family = AF_INET;
+   fprintf(stderr, "sin_family set\n");
+   bcopy((char *)server->h_addr,
+        (char *) &serv_addr->sin_addr.s_addr,
+        server->h_length);
+   fprintf(stderr, "bcopy executed\n");
+   serv_addr->sin_port = htons(10602);
+   fprintf(stderr, "sin_port set\n");
 
-   n = sizeof(*serv_addr);
-   local->sin_family = AF_INET;
-   local->sin_port = htons(10602);
-   local->sin_addr.s_addr = INADDR_ANY;
+   fprintf(stderr, "Connecting to the socket\n");
+   if(connect(sockfd, (struct sockaddr *)serv_addr, sizeof(*serv_addr)) < 0)
+   {
+      fprintf(stderr, "Error establishing a connection. Aborting client\n");
+      exit(0);
+   }
 
-   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-   bind(sockfd, (sockaddr *)local, sizeof(*local));
-
-   fprintf(stderr, "Socket bound, waiting to receive broadcast");
-   recvfrom(sockfd, rev, 14 * sizeof(char), 0, (sockaddr *)serv_addr, (socklen_t *)&n);
-
+   fprintf(stderr, "Waiting for server to send reply\n");
+   read(sockfd, rev, 28);
    fprintf(stderr, "Message received: %s\n", rev);
-   fprintf(stderr, "From: %s\n", inet_ntoa(serv_addr->sin_addr));
    return 0;
 }
 

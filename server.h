@@ -47,13 +47,13 @@ int initializeConnection(int *servSock, int portno);
  * Function that sends a network broadcast indicating to all members of the
  * network the servers IP address
  *
- * Input: sockfd -> File descriptor of the socket where the server should listen
- *                  to the requests of the players
+ * Input: acceptSocket -> File descriptor of the socket where the server should listen
+ *                         to the requests of the players
  *        sockets -> Array where the sockets to the four connections should be
  *                   saved
  * Output: 1 if the broadcast was successfully sent, 0 otherwise
  * Side effects: The input array will contain four sockets, corresponding to the
  *               communication tunnels to each one of the players
  */
-int sendBroadcast(int sockfd, int *sockets);
+int sendBroadcast(int acceptSocket, int *sockets);
 #endif /* SERVER_H_ */

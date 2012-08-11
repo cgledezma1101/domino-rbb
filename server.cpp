@@ -81,7 +81,7 @@ int initializeConnection(int *sockfd, int portno)
    return 1;
 }
 
-int sendBroadcast(int sockfd, int *sockets)
+int sendBroadcast(int acceptSocket, int *sockets)
 {
    char serversIp[INET_ADDRSTRLEN], netmask[INET_ADDRSTRLEN];
    char *message, *ipString, *ipElem;
@@ -129,7 +129,16 @@ int sendBroadcast(int sockfd, int *sockets)
    //Avoid memory leak
    if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);
 
+   //Here, the servers IP address is displayed
    fprintf(stderr, "IP Address: %s\n", serversIp);
+
+   /* This area is not temporarily available, but will be in future releases.
+    *
+    * Here, the LAN's broadcast IP is calculated so a message can be sent to
+    * all Playbooks on the network with this server's IP address. This way users
+    * will be able to connect to this server without any knowledge of the underlying
+    * communication
+
    fprintf(stderr, "Netmask: %s\n", netmask);
 
    broadcastIp = (sockaddr_in *)malloc(sizeof(struct sockaddr_in));
@@ -197,16 +206,28 @@ int sendBroadcast(int sockfd, int *sockets)
 
    //Connect the broadcast buffer
    int n;
-   /*if((n = connect(broadSocket, (struct sockaddr *)broadcastIp, sizeof(*broadcastIp))) < 0)
+   if((n = connect(broadSocket, (struct sockaddr *)broadcastIp, sizeof(*broadcastIp))) < 0)
    {
       fprintf(stderr, "Error connecting to the broadcast buffer. Error: %d\n", n);
       exit(1);
-   }*/
+   }
 
    //Send the broadcast
    sendto(broadSocket, message, 11 * sizeof(char), 0, (struct sockaddr *)broadcastIp, sizeof(*broadcastIp));
 
    fprintf(stderr, "Message has been broadcasted\n");
+    */
+
+   //Here, the server waits for 4 connections to be established. PLayers will be
+   //set in the order in which they establish the connection
+
+   for(i = 0; i < 4; ++ i)
+   {
+      fprintf(stderr, "Waiting for player %d to connect\n", i);
+      sockets[i] = accept(acceptSocket, NULL, NULL);
+      fprintf(stderr, "Accepted and saved connection to player %d\n", i);
+   }
+
    //Setting free allocated memory and returning
    /*free(message);
    free(localIp);
