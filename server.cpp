@@ -20,7 +20,6 @@ int runServer()
    //Port used to communicate
    int portno = 10602;
 
-   /*
    if(!initializeConnection(&sockfd, portno))
    {
       fprintf(stderr, "Error initializing connection. Aborting server\n");
@@ -32,7 +31,7 @@ int runServer()
       fprintf(stderr, "Error finding the players for the game. Aborting server\n");
       exit(0);
    }
-   */
+
    if(!initializeGame(playerSocket))
    {
       fprintf(stderr, "Error initializing players. Aborting server\n");
