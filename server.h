@@ -20,6 +20,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <time.h>
 
 /*
  * Function that executes the commands that start a server that will handle one
@@ -55,5 +56,16 @@ int initializeConnection(int *servSock, int portno);
  * Side effects: The input array will contain four sockets, corresponding to the
  *               communication tunnels to each one of the players
  */
-int sendBroadcast(int acceptSocket, int *sockets);
+int getPlayers(int acceptSocket, int *sockets);
+
+/*
+ * This function sends to each player previously accepted with getPlayers a set
+ * of 7 randomly selected domino pieces
+ *
+ * Input: players -> Opened sockets to each player
+ * Output: 1 if the messages where sent correctly, 0 otherwise
+ * Side effects: None
+ */
+int initializeGame(int *players);
+
 #endif /* SERVER_H_ */

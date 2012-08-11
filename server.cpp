@@ -20,35 +20,25 @@ int runServer()
    //Port used to communicate
    int portno = 10602;
 
-
+   /*
    if(!initializeConnection(&sockfd, portno))
    {
-      fprintf(stderr, "Error initializing connection\n");
-      exit(1);
+      fprintf(stderr, "Error initializing connection. Aborting server\n");
+      exit(0);
    }
 
-   if(!sendBroadcast(sockfd, playerSocket))
+   if(!getPlayers(sockfd, playerSocket))
    {
-      fprintf(stderr, "Error sending the broadcast message\n");
-      exit(1);
+      fprintf(stderr, "Error finding the players for the game. Aborting server\n");
+      exit(0);
+   }
+   */
+   if(!initializeGame(playerSocket))
+   {
+      fprintf(stderr, "Error initializing players. Aborting server\n");
+      exit(0);
    }
 
-   exit(0);
-
-   clilen = sizeof(cliAddr[0]);
-
-   //Wait for all four players to join, which is, open a socket with the server
-   for(i = 0; i < 4; ++ i){
-      fprintf(stderr, "Waiting to accept connection %d\n", i);
-      playerSocket[i] = accept(sockfd,
-                  (struct sockaddr *) &cliAddr[i],
-                  &clilen);
-      fprintf(stderr, "Connection %d was accepted\n", i);
-      if (playerSocket[i] < 0)
-        printf("ERROR on accept %d\n", i);
-   }
-
-   //If here, all four players have established a connection to the server
    return 0;
 }
 
@@ -81,7 +71,7 @@ int initializeConnection(int *sockfd, int portno)
    return 1;
 }
 
-int sendBroadcast(int acceptSocket, int *sockets)
+int getPlayers(int acceptSocket, int *sockets)
 {
    char serversIp[INET_ADDRSTRLEN], netmask[INET_ADDRSTRLEN];
    char *message, *ipString, *ipElem;
@@ -233,5 +223,70 @@ int sendBroadcast(int acceptSocket, int *sockets)
    free(localIp);
    free(subnetMask);
    free(broadcastIp);*/
+   return 1;
+}
+
+int initializeGame(int *playerSockets)
+{
+   int numDominoes = 28, i, j, k, randN;
+   int dominoes[28][2], assigned[7][2];
+   char message[17];
+   char intToAsc[] = {'0', '1', '2', '3', '4', '5', '6'};
+
+   //Initialize the array with all the pieces
+   k = 0;
+   for(i = 0; i < 7; ++ i)
+   {
+      for(j = i; j < 7; ++ j)
+      {
+         dominoes[k][0] = i;
+         dominoes[k][1] = j;
+         ++ k;
+         fprintf(stderr, "Building dominoe %d | %d\n", i, j);
+      }
+   }
+
+   //Initialize the random seed
+   srand(time(0));
+
+   //Get the assignments for each player and send them
+   message[0] = 'e';
+   message[16] = '\0';
+   for(i = 0; i < 4; ++ i)
+   {
+      message[1] = intToAsc[i];
+      for(j = 0; j < 7; ++ j)
+      {
+         randN = rand() % numDominoes;
+         //Assign the dominoe to the player
+         assigned[j][0] = dominoes[randN][0];
+         assigned[j][1] = dominoes[randN][1];
+
+         //Now re-arrange the dominoes array to eliminate the assigned piece
+         for(k = randN; k < numDominoes; ++ k)
+         {
+            dominoes[k][0] = dominoes[k + 1][0];
+            dominoes[k][1] = dominoes[k + 1][1];
+         }
+         -- numDominoes;
+         /*fprintf(stderr, "Piece %d | %d, has been assigned to player %d\n",
+                 assigned[j][0], assigned[j][1], i);*/
+         //fprintf(stderr, "There are %d pieces left to assign\n", numDominoes);
+      }
+
+      //fprintf(stderr, "\nAssignment for player %d completed\n", i);
+      //Assignment for this player is complete, build message and send it
+      fprintf(stderr, "Assignment to player %d: \n", i);
+      for(k = 0; k < 7; ++ k)
+      {
+         message[2 + 2 * k] = intToAsc[assigned[k][0]];
+         message[2 + 2 * k + 1] = intToAsc[assigned[k][1]];
+         fprintf(stderr, "%d | %d\n", assigned[k][0], assigned[k][1]);
+      }
+
+      fprintf(stderr, "Sending message to player %d is: %s\n", i, message);
+
+      write(playerSockets[i], message, 16);
+   }
    return 1;
 }
