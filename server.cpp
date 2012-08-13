@@ -10,17 +10,12 @@ int runServer()
 {
    socklen_t clilen;
    char buffer[256];
-   int n, i;
-   //File descriptor for the servers socket
-   int sockfd = 0;
-   //File descriptors to the players sockets
-   int playerSocket[4];
-   //Structures that describe the players internet addresses
-   struct sockaddr_in cliAddr[4];
-   //Port used to communicate
-   int portno = 10602;
+   int n, i, starter, endType, gameStat;
+   //File descriptor for the sockets used
+   int sockfd = 0, playerSocket[4];
+   int scores[2] = {0, 0};
 
-   if(!initializeConnection(&sockfd, portno))
+   if(!initializeConnection(&sockfd, 10602))
    {
       fprintf(stderr, "Error initializing connection. Aborting server\n");
       exit(0);
@@ -32,12 +27,29 @@ int runServer()
       exit(0);
    }
 
-   if(!initializeGame(playerSocket))
-   {
-      fprintf(stderr, "Error initializing players. Aborting server\n");
-      exit(0);
-   }
 
+   while(true)
+   {
+      if((starter = initializeGame(playerSocket)) == -1)
+      {
+         fprintf(stderr, "Error initializing players. Aborting server\n");
+         exit(0);
+      }
+
+      if((endType = processPlays(playerSocket, starter)) == -1)
+      {
+         fprintf(stderr, "Error processing plays. Aborting server\n");
+         exit(0);
+      }
+
+      gameStat = endHand(playerSocket, scores, endType);
+
+      if(gameStat == 1)
+      {
+         fprintf(stderr, "The game has ended.\n");
+         break;
+      }
+   }
    return 0;
 }
 
@@ -227,10 +239,9 @@ int getPlayers(int acceptSocket, int *sockets)
 
 int initializeGame(int *playerSockets)
 {
-   int numDominoes = 28, i, j, k, randN;
+   int numDominoes = 28, i, j, k, randN, ss;
    int dominoes[28][2], assigned[7][2];
    char message[17];
-   char intToAsc[] = {'0', '1', '2', '3', '4', '5', '6'};
 
    //Initialize the array with all the pieces
    k = 0;
@@ -253,13 +264,17 @@ int initializeGame(int *playerSockets)
    message[16] = '\0';
    for(i = 0; i < 4; ++ i)
    {
-      message[1] = intToAsc[i];
+      message[1] = intToAsc(i);
       for(j = 0; j < 7; ++ j)
       {
          randN = rand() % numDominoes;
-         //Assign the dominoe to the player
+         //Assign the domino to the player
          assigned[j][0] = dominoes[randN][0];
          assigned[j][1] = dominoes[randN][1];
+
+         //This player got the double six
+         if((assigned[j][0] == 6) && (assigned[j][1] == 6))
+            ss = i;
 
          //Now re-arrange the dominoes array to eliminate the assigned piece
          for(k = randN; k < numDominoes; ++ k)
@@ -278,8 +293,8 @@ int initializeGame(int *playerSockets)
       fprintf(stderr, "Assignment to player %d: \n", i);
       for(k = 0; k < 7; ++ k)
       {
-         message[2 + 2 * k] = intToAsc[assigned[k][0]];
-         message[2 + 2 * k + 1] = intToAsc[assigned[k][1]];
+         message[2 + 2 * k] = intToAsc(assigned[k][0]);
+         message[2 + 2 * k + 1] = intToAsc(assigned[k][1]);
          fprintf(stderr, "%d | %d\n", assigned[k][0], assigned[k][1]);
       }
 
@@ -287,5 +302,253 @@ int initializeGame(int *playerSockets)
 
       write(playerSockets[i], message, 16);
    }
-   return 1;
+
+   return ss;
+}
+
+int processPlays(int players[4], int s)
+{
+   int piecesLeft[4] = {7, 7, 7, 7};
+   char type;
+   char *ms, *mr;
+   int actual, passStart = -1, i;
+
+   //The first thing that must be done is send a message to the player,
+   // that got 6|6, indicating it is his turn to play.
+   ms = (char *)malloc(sizeof(char) * 1);
+   ms[0] = 't';
+   write(players[s], ms, 1);
+   free(ms);
+   actual = s;
+
+   //Now, start taking the turns
+   while(true)
+   {
+      //Listen on the corresponding players socket
+      //Get the type of the message sent and build an appropriate response
+      read(players[actual], &type, 1);
+      switch(type)
+      {
+         case 'n':
+            fprintf(stderr, "Player %d has called a pass\n", actual);
+            //First, verify that the game has not been locked
+            if(actual == passStart)
+            {
+               fprintf(stderr, "The game has been locked\n");
+               return 4;
+            }
+
+            if(passStart == -1)
+               passStart = actual;
+
+            //Send all a message indicating there has been a pass
+            ms = (char *)malloc(sizeof(char) * 2);
+            ms[0] = 'p';
+            ms[1] = intToAsc(actual);
+            for(i = 0; i < 4; ++ i)
+            {
+               if(i == actual)
+                  continue;
+               write(players[i], ms, 2);
+            }
+
+            fprintf(stderr, "All have been notified, giving turn to %d\n", (actual + 1) % 4);
+            ms[0] = 't';
+            //Give the turn to the next player
+            write(players[(++ actual) % 4], ms, 1);
+
+            free(ms);
+            break;
+
+         case 'j':
+            fprintf(stderr, "Player %d has made a move\n", actual);
+            //Read the rest of the move
+            mr = (char *) malloc(sizeof(char) * 3);
+            read(players[actual], mr, 3);
+
+            fprintf(stderr, "Move: %c | %c .. %c\n", mr[0], mr[1], mr[2]);
+            //Notify everyone which move has been played
+            ms = (char *)malloc(sizeof(char) * 5);
+            ms[0] = 'a';
+            ms[1] = intToAsc(actual);
+            ms[2] = mr[0];
+            ms[3] = mr[1];
+            ms[4] = mr[2];
+
+            for(i = 0; i < 4; ++ i)
+            {
+               if(i == actual)
+                  continue;
+               write(players[i], ms, 5);
+            }
+
+            //Now, discount the number of pieces the player has, and check if
+            //the hand has ended
+            if((-- piecesLeft[actual]) == 0)
+            {
+               fprintf(stderr, "Player %d is out of pieces. Hand ended normally\n", actual);
+               return actual;
+            }
+
+            //If hand didn't end, update the pass checker and give turn to the next player
+            passStart = -1;
+            free(ms);
+            ms = (char *)malloc(sizeof(char) * 1);
+            ms[0] = 't';
+
+            write(players[(++ actual) % 4], ms, 1);
+            free(ms);
+            free(mr);
+            break;
+
+         default:
+            fprintf(stderr, "A malformed message has been received: %c\n", type);
+            return -1;
+      }
+   }
+
+   return 0;
+}
+
+int endHand(int players[4], int scores[2], int endType)
+{
+   int i, j, k, tScore0, tScore1, msLength = 11;
+   int partialScore[2] = {0, 0}, pNumPieces[4] = {0, 0, 0, 0};
+   char *ms, *mr;
+   char num[2] = {'0', '\0'}, pPieces[4][14];
+
+   //First, send all players the message that the hand has ended
+   ms = (char *)malloc(sizeof(char) * 1);
+   ms[0] = 'm';
+   for(i = 0; i < 4; ++ i)
+   {
+      //Ommit the player that ended the hand
+      if(i == endType)
+         continue;
+      fprintf(stderr, "Sending player %d the end hand message.\n", i);
+      write(players[i], ms, 1);
+   }
+
+   //Now, receive from each player their scores
+   for(i = 0; i < 4; ++ i)
+   {
+      fprintf(stderr, "Analizing the hand of player %d\n", i);
+      //Omit the player that ended the hand, for he will send nothing
+      if(i == endType)
+         continue;
+
+      mr = (char *)malloc(sizeof(char) * 3);
+
+      mr[3] = '\0'; //This is necessary for 'atoi' to work fine
+      read(players[i], mr, 2);
+
+      if(mr[0] != 'z')
+      {
+         fprintf(stderr, "Received the wrong message: %c.\n", mr[0]);
+         return -1;
+      }
+
+      pNumPieces[i] = atoi(&mr[1]);
+      msLength += 2 * pNumPieces[i];
+
+      free(mr);
+      mr = (char *)malloc(sizeof(char) * (2 * pNumPieces[i]));
+      read(players[i], mr, (2 * pNumPieces[i]));
+
+      for(j = 0; j < 2 * pNumPieces[i]; ++ j)
+      {
+         num[0] = mr[j];
+         pPieces[i][j] = mr[j];
+         fprintf(stderr, "Adding to team %d the amount %c\n", i % 2, num[0]);
+         partialScore[i % 2] += atoi(num);
+      }
+
+      free(mr);
+   }
+
+   //Now decide who wins and update the real scores
+   if(endType == 4)
+   {
+      //The hand was a block, calculate who wins and add up the score
+      if(partialScore[0] > partialScore[1])
+      {
+         fprintf(stderr, "Team 1 wins the block.\n");
+         scores[1] += partialScore[0];
+      }else if(partialScore[1] > partialScore[0])
+      {
+         fprintf(stderr, "Team 2 wins the block.\n");
+         scores[0] += partialScore[1];
+      }else
+      {
+         fprintf(stderr, "Score was even, no one wins the block.\n");
+      }
+   }else
+   {
+      if((endType == 0) || (endType == 2))
+      {
+         scores[0] += partialScore[1];
+      }else if((endType == 1) || (endType == 3))
+      {
+         scores[1] += partialScore[0];
+      }else
+      {
+         fprintf(stderr, "Received an invalid endType: %d", endType);
+         return -1;
+      }
+   }
+
+   //Now, build the message to be sent to everyone
+   ms = (char *)malloc(sizeof(char) * msLength);
+   ms[0] = 's';
+
+   //Build both scores
+   tScore0 = scores[0];
+   tScore1 = scores[1];
+   for(i = 3; i > 0; ++ i)
+   {
+      ms[i] = intToAsc(tScore0 % 10);
+      ms[3 + i] = intToAsc(tScore1 % 10);
+      tScore0 /= 10;
+      tScore1 /= 10;
+   }
+
+   //Add all hands to the message
+   i = 7;
+   for(j = 0; j < 4; ++ j)
+   {
+      ms[i] = intToAsc(pNumPieces[j]);
+      ++ i;
+      for(k = 0; k < 2 * pNumPieces[j]; ++ k)
+      {
+         ms[i] = intToAsc(pPieces[j][k]);
+         ++ i;
+      }
+   }
+
+   fprintf(stderr, "The message that will be sent is: %s", ms);
+
+   //Send everyone the message
+   for (i = 0; i < 4; ++ i)
+   {
+      fprintf(stderr, "End of hand message being sent to player %d.\n", i);
+      write(players[i], ms, msLength);
+   }
+
+   free(ms);
+   //Now, return depending to the games state
+   if((scores[0] >= 100) || (scores[1] >= 100))
+   {
+      //Game has ended
+      fprintf(stderr, "The game has ended, final scores have been sent.\n");
+      return 1;
+   }
+
+   return 0;
+}
+
+char intToAsc(int n)
+{
+   char arr[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+   return arr[n];
 }
