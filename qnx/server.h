@@ -63,7 +63,7 @@ int getPlayers(int acceptSocket, int *sockets);
  * of 7 randomly selected domino pieces
  *
  * Input: players -> Opened sockets to each player
- * Output: The id of the player that got the 6|6, or -1 in case of mistake
+ * Output: The id of the player that got the 6|6, or -1 in case of error
  * Side effects: None
  */
 int initializeGame(int *players);

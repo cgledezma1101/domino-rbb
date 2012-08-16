@@ -300,7 +300,11 @@ int initializeGame(int *playerSockets)
 
       fprintf(stderr, "Sending message to player %d is: %s\n", i, message);
 
-      write(playerSockets[i], message, 16);
+      if(-1 == write(playerSockets[i], message, 16))
+      {
+         fprintf(stderr, "Error notifying player %d his assignment\n", i);
+         return -1;
+      }
    }
 
    return ss;
@@ -317,7 +321,12 @@ int processPlays(int players[4], int s)
    // that got 6|6, indicating it is his turn to play.
    ms = (char *)malloc(sizeof(char) * 1);
    ms[0] = 't';
-   write(players[s], ms, 1);
+
+   if(-1 == write(players[s], ms, 1))
+   {
+      fprintf(stderr, "Error sending the initial player his turn\n");
+      return -1;
+   }
    free(ms);
    actual = s;
 
@@ -349,13 +358,22 @@ int processPlays(int players[4], int s)
             {
                if(i == actual)
                   continue;
-               write(players[i], ms, 2);
+
+               if(-1 == write(players[i], ms, 2))
+               {
+                  fprintf(stderr, "Error sending player %d the pass message\n", i);
+                  return -1;
+               }
             }
 
             fprintf(stderr, "All have been notified, giving turn to %d\n", (actual + 1) % 4);
             ms[0] = 't';
             //Give the turn to the next player
-            write(players[(++ actual) % 4], ms, 1);
+            if(-1 == write(players[(++ actual) % 4], ms, 1))
+            {
+               fprintf(stderr, "Error giving turn to next player");
+               return -1;
+            }
 
             free(ms);
             break;
@@ -379,7 +397,12 @@ int processPlays(int players[4], int s)
             {
                if(i == actual)
                   continue;
-               write(players[i], ms, 5);
+
+               if(-1 == write(players[i], ms, 5))
+               {
+                  fprintf(stderr, "Error sending play to player %d\n", i);
+                  return -1;
+               }
             }
 
             //Now, discount the number of pieces the player has, and check if
@@ -396,7 +419,10 @@ int processPlays(int players[4], int s)
             ms = (char *)malloc(sizeof(char) * 1);
             ms[0] = 't';
 
-            write(players[(++ actual) % 4], ms, 1);
+            if(-1 == write(players[(++ actual) % 4], ms, 1))
+            {
+               fprintf(stderr, "Error giving turn to next player\n");
+            }
             free(ms);
             free(mr);
             break;
@@ -422,17 +448,21 @@ int endHand(int players[4], int scores[2], int endType)
    ms[0] = 'm';
    for(i = 0; i < 4; ++ i)
    {
-      //Ommit the player that ended the hand
+      //Omit the player that ended the hand
       if(i == endType)
          continue;
       fprintf(stderr, "Sending player %d the end hand message.\n", i);
-      write(players[i], ms, 1);
+
+      if(-1 == write(players[i], ms, 1))
+      {
+         fprintf(stderr, "Error notifying player %d of end of hand\n", i);
+      }
    }
 
    //Now, receive from each player their scores
    for(i = 0; i < 4; ++ i)
    {
-      fprintf(stderr, "Analizing the hand of player %d\n", i);
+      fprintf(stderr, "Analyzing the hand of player %d\n", i);
       //Omit the player that ended the hand, for he will send nothing
       if(i == endType)
          continue;
@@ -531,7 +561,11 @@ int endHand(int players[4], int scores[2], int endType)
    for (i = 0; i < 4; ++ i)
    {
       fprintf(stderr, "End of hand message being sent to player %d.\n", i);
-      write(players[i], ms, msLength);
+
+      if(-1 == write(players[i], ms, msLength))
+      {
+         fprintf(stderr, "Error sending player %d the hands left\n", i);
+      }
    }
 
    free(ms);
