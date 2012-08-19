@@ -20,6 +20,8 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
+#include "message.h"
+
 /*
  * Starts the necessary procedures so a client can connect to a server and
  * start playing. Initially it is going to be empty and will only work as
@@ -71,6 +73,18 @@ int sendPass(int serv);
  * Side effects: None
  */
 int sendPiecesLeft(int *pieces, int numPieces, int serv);
+
+/*
+ * Receives a particular message from the server
+ *
+ * Input: None
+ * Output: A structure containing the information that was received from the
+ *         server. To see the semantics of this structure refer to it's
+ *         documentation
+ * Side effects: None
+ */
+struct Message receiveMessage();
+
 /*
  * Function that receives a number between 0 and 9, and returns its char representation
  *
