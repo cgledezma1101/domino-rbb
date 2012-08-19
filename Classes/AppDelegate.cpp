@@ -1,7 +1,7 @@
 #include "AppDelegate.h"
 
 #include "cocos2d.h"
-#include "HelloWorldScene.h"
+#include "MainScene.h"
 
 #include "CCEGLView.h"
 
@@ -23,7 +23,7 @@ bool AppDelegate::initInstance() {
 		// The HelloWorld is designed as HVGA.
 		CCEGLView * pMainWnd = new CCEGLView();
 		CC_BREAK_IF(! pMainWnd
-				|| ! pMainWnd->Create(TEXT("cocos2d: Hello World"), 480, 320));
+				|| ! pMainWnd->Create(TEXT("cocos2d: Domino"), 480, 320));
 
 #endif  // CC_PLATFORM_WIN32
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
@@ -107,7 +107,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
 	pDirector->setAnimationInterval(1.0 / 60);
 
 	// create a scene. it's an autorelease object
-	CCScene *pScene = HelloWorld::scene();
+	CCScene *pScene = Main::scene();
 
 	// run
 	pDirector->runWithScene(pScene);
