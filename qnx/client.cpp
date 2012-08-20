@@ -52,9 +52,9 @@ int sendPlay(int v0, int v1, int s, int serv)
 
    //Build the message to be sent
    ms[0] = 'j';
-   ms[1] = intToAsc(v0);
-   ms[2] = intToAsc(v1);
-   ms[3] = intToAsc(s);
+   ms[1] = intToAscClient(v0);
+   ms[2] = intToAscClient(v1);
+   ms[3] = intToAscClient(s);
 
    //Send the message through the socket
    if(-1 == write(serv, ms, 4))
@@ -86,11 +86,11 @@ int sendPiecesLeft(int *pieces, int numPieces, int serv)
 
    //Build the message
    ms[0] = 'z';
-   ms[1] = intToAsc(numPieces);
+   ms[1] = intToAscClient(numPieces);
 
    for(i = 0; i < 2 * numPieces; ++ i)
    {
-      ms[2 + i] = intToAsc(pieces[i]);
+      ms[2 + i] = intToAscClient(pieces[i]);
    }
 
    if(-1 == write(serv, ms, 2 + (2 * numPieces)))
@@ -101,7 +101,8 @@ int sendPiecesLeft(int *pieces, int numPieces, int serv)
 
    return 1;
 }
-char intToAsc(int n)
+
+char intToAscClient(int n)
 {
    char arr[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 

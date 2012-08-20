@@ -3,7 +3,7 @@
 
 #include "cocos2d.h"
 #include "Domino.h"
-#include "server.h"
+#include "../qnx/server.h"
 
 class Main : public cocos2d::CCLayer
 {

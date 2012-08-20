@@ -92,5 +92,5 @@ struct Message receiveMessage();
  * Output: 'n''s char representation
  * Side effects: None
  */
-char intToAsc(int n);
+char intToAscClient(int n);
 #endif /* CLIENT_H_ */
