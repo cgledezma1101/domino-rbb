@@ -5,6 +5,8 @@
 
 USING_NS_CC;
 
+CCSize size;
+
 CCScene* Main::scene()
 {
 	// 'scene' is an autorelease object
@@ -41,7 +43,7 @@ bool Main::init()
 										this,
 										menu_selector(Main::menuCloseCallback) );
 
-
+	size = CCDirector::sharedDirector()->getWinSize();
 	CCLabelBMFont *label1 = CCLabelBMFont::labelWithString( "Crear mesa nueva", "fonts/bitmapFontTest3.fnt" );
 	CCLabelBMFont *label2 = CCLabelBMFont::labelWithString( "Unirse a mesa", "fonts/bitmapFontTest3.fnt" );
 	CCMenuItem *createTable = CCMenuItemLabel::itemWithLabel(label1, this, menu_selector(Main::menuNewTable) );
@@ -50,12 +52,10 @@ bool Main::init()
 
 	pCloseItem->setPosition( ccp(CCDirector::sharedDirector()->getWinSize().width - 20, 20) );
 
-	// ask director the window size
-	CCSize size = CCDirector::sharedDirector()->getWinSize();
 	// create menu, it's an autorelease object
 	CCMenu* pMenu = CCMenu::menuWithItems(pCloseItem, NULL);
 	CCMenu *menu = CCMenu::menuWithItems(createTable,joinTable, NULL);
-	menu->setPosition( ccp(size.width / 2, size.height - 80) );
+	menu->setPosition( ccp(size.width / 2, size.height - 100) );
 	menu->alignItemsVertically();
 	pMenu->setPosition( CCPointZero );
 	this->addChild(pMenu, 1);
@@ -89,17 +89,16 @@ void Main::menuCloseCallback(CCObject* pSender)
 void Main::menuNewTable(CCObject* pSender)
 {
 		CCScene* scene = CCScene::node();
+	    Main* pLayer = new Main();
 
 
-	    Main* pLayer = Main::node();
-	    scene->addChild( pLayer, 0 );
-
-		CCLabelBMFont *label1 = CCLabelBMFont::labelWithString( "Esperando por los jugadores", "fonts/bitmapFontTest3.fnt" );
-		this->addChild(label1,0);
-		CCDirector::sharedDirector()->pushScene( CCTransitionSlideInT::transitionWithDuration(1, scene) );
+	    CCLabelBMFont *label1 = CCLabelBMFont::labelWithString( "Esperando por los otros jugadores", "fonts/bitmapFontTest3.fnt" );
+		pLayer->addChild(label1,0);
+		label1->setPosition( ccp(size.width / 2, size.height - 100) );
+	    scene->addChild( pLayer, 0);
+		CCDirector::sharedDirector()->pushScene( scene );
 	    scene->release();
 	    pLayer->release();
-	    //Changing to a "Waiting for players screen".
 
 	    //runServer();
 
@@ -115,8 +114,9 @@ void Main::menuJoinTable(CCObject* pSender)
 {
 			CCScene* scene = CCScene::node();
 
-
-			Main* pLayer =  Main::node();
+			CCLayer* pLayer = CCLayer::node();
+			CCSprite* sprite = CCSprite::spriteWithFile("dominoTable.jpg");
+			addChild(sprite);
 		    scene->addChild( pLayer, 0 );
 
 			CCLabelBMFont *label1 = CCLabelBMFont::labelWithString( "Insertar el numero del servidor", "fonts/bitmapFontTest3.fnt" );
@@ -146,5 +146,7 @@ void Main::showPieces(){
 
 	}
 }
+
+
 
 

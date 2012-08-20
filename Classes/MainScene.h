@@ -9,6 +9,7 @@ class Main : public cocos2d::CCLayer
 {
 	Domino pieces[];
 public:
+
 	// Here's a difference. Method 'init' in cocos2d-x returns bool, instead of returning 'id' in cocos2d-iphone
 	virtual bool init();  
 
@@ -28,5 +29,21 @@ public:
 	// implement the "static node()" method manually
 	LAYER_NODE_FUNC(Main);
 };
+
+class PlayLayer : public cocos2d::CCLayer
+{
+
+public:
+	PlayLayer();
+
+} ;
+
+class PlayScene : public cocos2d::CCScene
+{
+public:
+	PlayScene();
+
+};
+
 
 #endif // __Main_SCENE_H__
