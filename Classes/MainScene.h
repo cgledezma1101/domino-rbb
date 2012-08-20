@@ -5,6 +5,7 @@
 #include "Domino.h"
 #include "../qnx/server.h"
 
+
 class Main : public cocos2d::CCLayer
 {
 	Domino pieces[];

@@ -22,6 +22,10 @@
 #include <net/if.h>
 #include <time.h>
 
+
+/* Variable that stores retrieved IP
+ */
+extern char* serverIp;
 /*
  * Function that executes the commands that start a server that will handle one
  * domino game

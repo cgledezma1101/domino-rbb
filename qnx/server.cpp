@@ -5,6 +5,7 @@
  *      Author: C.G Ledezma
  */
 #include "server.h"
+char* serverIp;
 
 int runServer()
 {
@@ -132,6 +133,8 @@ int getPlayers(int acceptSocket, int *sockets)
 
    //Here, the servers IP address is displayed
    fprintf(stderr, "IP Address: %s\n", serversIp);
+
+   serverIp = serversIp;
 
    /* This area is not temporarily available, but will be in future releases.
     *

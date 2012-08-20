@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <sstream>
 #include <string>
-
+#include "../qnx/server.h"
+#include <pthread.h>
 USING_NS_CC;
 
 CCSize size;
@@ -83,24 +84,51 @@ void Main::menuCloseCallback(CCObject* pSender)
 	exit(0);
 #endif
 }
+
+void *createServer(void* t){
+
+	int r = runServer();
+
+}
 /* Create a new table
  *
  */
 void Main::menuNewTable(CCObject* pSender)
 {
 		CCScene* scene = CCScene::node();
-	    Main* pLayer = new Main();
+		CCLayer* pLayer = CCLayer::node();
 
+	    //Creating waiting and loading scene
+	    CCLabelBMFont *label1 = CCLabelBMFont::labelWithString("Loading...","fonts/bitmapFontTest3.fnt");
+		pLayer->addChild(label1,1);
+		CCSprite* waitingBack =  CCSprite::spriteWithFile("waitingBack.jpg");
+		pLayer->addChild(waitingBack,0);
+		label1->setPosition( ccp(size.width / 2, size.height - 150) );
+		scene->addChild(pLayer, 0);
+		CCDirector::sharedDirector()->replaceScene( scene );
+		// Create a thread to run server
+		pthread_t thread;
+		long t;
+		int rc= pthread_create(&thread, NULL, createServer, (void *)t);
+	    if (rc){
+	       printf("ERROR; return code from pthread_create() is %d\n", rc);
+	       exit(-1);
+	    }
+	    printf("Im dad");
+	    while (serverIp == NULL){
+	    	printf("Server Ip is null");
+	    }
+	    //Sustitution of labels
+	    pLayer->removeChild(label1,true);
 
-	    CCLabelBMFont *label1 = CCLabelBMFont::labelWithString( "Esperando por los otros jugadores", "fonts/bitmapFontTest3.fnt" );
-		pLayer->addChild(label1,0);
-		label1->setPosition( ccp(size.width / 2, size.height - 100) );
-	    scene->addChild( pLayer, 0);
-		CCDirector::sharedDirector()->pushScene( scene );
-	    scene->release();
-	    pLayer->release();
-
-	    //runServer();
+	    //Show the serverIp address
+//	    CCLabelBMFont *label2 = CCLabelBMFont::labelWithString(serverIp, "fonts/bitmapFontTest3.fnt" );
+//	    CCLabelBMFont *label3 = CCLabelBMFont::labelWithString("Este es tu identificador. Compartelo con 3 amigos para que se unan a tu mesa!", "fonts/bitmapFontTest3.fnt" );
+//
+//	    //
+//	    CCLabelBMFont *label4 = CCLabelBMFont::labelWithString( "Esperando por los otros jugadores", "fonts/bitmapFontTest3.fnt" );
+//	    pLayer->addChild(label2,0);
+//	    CCDirector::sharedDirector()->pushScene( scene );
 
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
 	exit(0);
@@ -119,8 +147,8 @@ void Main::menuJoinTable(CCObject* pSender)
 			addChild(sprite);
 		    scene->addChild( pLayer, 0 );
 
-			CCLabelBMFont *label1 = CCLabelBMFont::labelWithString( "Insertar el numero del servidor", "fonts/bitmapFontTest3.fnt" );
-			this->addChild(label1,0);
+		    CCLabelTTF* label = CCLabelTTF::labelWithString("Inserta el identificador", "Arial", 28);
+			this->addChild(label,0);
 			CCDirector::sharedDirector()->pushScene( CCTransitionSlideInT::transitionWithDuration(1, scene) );
 		    scene->release();
 		    pLayer->release();
@@ -146,6 +174,7 @@ void Main::showPieces(){
 
 	}
 }
+
 
 
 
